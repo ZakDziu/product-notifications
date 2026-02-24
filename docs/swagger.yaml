@@ -1,0 +1,140 @@
+basePath: /
+definitions:
+  http.createProductRequest:
+    properties:
+      name:
+        example: iPhone 16
+        type: string
+    required:
+    - name
+    type: object
+  http.errorResponse:
+    properties:
+      error:
+        example: product not found
+        type: string
+    type: object
+  http.listProductsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/products.Product'
+        type: array
+      pagination:
+        $ref: '#/definitions/http.paginationMeta'
+    type: object
+  http.paginationMeta:
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 42
+        type: integer
+    type: object
+  products.Product:
+    properties:
+      created_at:
+        example: "2026-02-24T12:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: iPhone 16
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Product management microservice with event notifications.
+  title: Products API
+  version: "1.0"
+paths:
+  /products:
+    get:
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.listProductsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      summary: List products with pagination
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/http.createProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/products.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      summary: Create a new product
+      tags:
+      - products
+  /products/{id}:
+    delete:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errorResponse'
+      summary: Delete a product by ID
+      tags:
+      - products
+swagger: "2.0"

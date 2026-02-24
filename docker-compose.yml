@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE}
+    container_name: pn-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: ${RABBITMQ_IMAGE}
+    container_name: pn-rabbitmq
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  products:
+    build:
+      context: .
+      dockerfile: Dockerfile.products
+    container_name: pn-products
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${PRODUCTS_DATABASE_URL}
+      RABBITMQ_URL: ${PRODUCTS_RABBITMQ_URL}
+      HTTP_ADDR: ${PRODUCTS_HTTP_ADDR}
+      MIGRATIONS_PATH: ${PRODUCTS_MIGRATIONS_PATH}
+    ports:
+      - "${PRODUCTS_HTTP_PORT}:8080"
+
+  notifications:
+    build:
+      context: .
+      dockerfile: Dockerfile.notifications
+    container_name: pn-notifications
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: ${NOTIFICATIONS_RABBITMQ_URL}
+
+volumes:
+  pg-data:
