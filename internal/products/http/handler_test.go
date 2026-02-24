@@ -130,7 +130,7 @@ func TestHandler_DeleteProduct(t *testing.T) {
 
 			r := setupRouter(svc)
 			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodDelete, tt.url, nil)
+			req := httptest.NewRequest(http.MethodDelete, tt.url, http.NoBody)
 			r.ServeHTTP(w, req)
 
 			if w.Code != tt.wantStatus {
@@ -180,7 +180,7 @@ func TestHandler_ListProducts(t *testing.T) {
 
 			r := setupRouter(svc)
 			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodGet, tt.url, nil)
+			req := httptest.NewRequest(http.MethodGet, tt.url, http.NoBody)
 			r.ServeHTTP(w, req)
 
 			if w.Code != tt.wantStatus {

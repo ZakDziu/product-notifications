@@ -30,10 +30,10 @@ import (
 )
 
 const (
-	metricCreatedTotal    = "products_created_total"
-	metricDeletedTotal    = "products_deleted_total"
-	migrateSourcePrefix   = "file://"
-	postgresDriverName    = "postgres"
+	metricCreatedTotal  = "products_created_total"
+	metricDeletedTotal  = "products_deleted_total"
+	migrateSourcePrefix = "file://"
+	postgresDriverName  = "postgres"
 )
 
 // @title        Products API
@@ -46,21 +46,25 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
+	os.Exit(run(logger))
+}
+
+func run(logger *slog.Logger) int {
 	cfg, err := config.LoadProducts()
 	if err != nil {
 		logger.Error("load config", "error", err)
-		os.Exit(1)
+		return 1
 	}
 
 	if err := runMigrations(cfg.DatabaseURL, cfg.MigrationsPath); err != nil {
 		logger.Error("run migrations", "error", err)
-		os.Exit(1)
+		return 1
 	}
 
 	db, err := sql.Open(postgresDriverName, cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("open database", "error", err)
-		os.Exit(1)
+		return 1
 	}
 	defer db.Close()
 
@@ -72,20 +76,20 @@ func main() {
 	defer pingCancel()
 	if err := db.PingContext(pingCtx); err != nil {
 		logger.Error("ping database", "error", err)
-		os.Exit(1)
+		return 1
 	}
 
 	rabbitConn, err := amqp.Dial(cfg.RabbitMQURL)
 	if err != nil {
 		logger.Error("connect rabbitmq", "error", err)
-		os.Exit(1)
+		return 1
 	}
 	defer rabbitConn.Close()
 
 	publisher, err := messaging.NewRabbitPublisher(rabbitConn, products.EventsQueue)
 	if err != nil {
 		logger.Error("init publisher", "error", err)
-		os.Exit(1)
+		return 1
 	}
 	defer publisher.Close()
 
@@ -137,9 +141,10 @@ func main() {
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Error("graceful shutdown failed", "error", err)
-		os.Exit(1)
+		return 1
 	}
 	logger.Info("products service stopped")
+	return 0
 }
 
 func runMigrations(databaseURL, migrationsPath string) error {

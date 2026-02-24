@@ -68,7 +68,7 @@ func (c *Consumer) Listen(ctx context.Context) error {
 				return nil
 			}
 
-			if err := c.handleMessage(msg); err != nil {
+			if err := c.handleMessage(&msg); err != nil {
 				c.logger.Error("handle message failed", "error", err)
 				_ = msg.Nack(false, true)
 				continue
@@ -79,7 +79,7 @@ func (c *Consumer) Listen(ctx context.Context) error {
 	}
 }
 
-func (c *Consumer) handleMessage(msg amqp.Delivery) error {
+func (c *Consumer) handleMessage(msg *amqp.Delivery) error {
 	var event products.ProductEvent
 	if err := json.Unmarshal(msg.Body, &event); err != nil {
 		return fmt.Errorf("unmarshal event: %w", err)

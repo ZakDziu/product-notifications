@@ -21,23 +21,27 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
+	os.Exit(run(logger))
+}
+
+func run(logger *slog.Logger) int {
 	cfg, err := config.LoadNotifications()
 	if err != nil {
 		logger.Error("load config", "error", err)
-		os.Exit(1)
+		return 1
 	}
 
 	conn, err := amqp.Dial(cfg.RabbitMQURL)
 	if err != nil {
 		logger.Error("connect rabbitmq", "error", err)
-		os.Exit(1)
+		return 1
 	}
 	defer conn.Close()
 
 	consumer, err := notifications.NewConsumer(conn, products.EventsQueue, logger)
 	if err != nil {
 		logger.Error("init consumer", "error", err)
-		os.Exit(1)
+		return 1
 	}
 	defer consumer.Close()
 
@@ -58,7 +62,7 @@ func main() {
 	case err := <-errCh:
 		if err != nil {
 			logger.Error("consumer failed", "error", err)
-			os.Exit(1)
+			return 1
 		}
 	}
 
@@ -69,7 +73,7 @@ func main() {
 		case err := <-errCh:
 			if err != nil {
 				logger.Error("consumer stop failed", "error", err)
-				os.Exit(1)
+				return 1
 			}
 		case <-shutdownDeadline.C:
 			logger.Warn("consumer shutdown timeout reached")
@@ -77,4 +81,5 @@ func main() {
 	}
 
 	logger.Info("notifications service stopped")
+	return 0
 }
