@@ -199,15 +199,24 @@ Requires the [migrate CLI](https://github.com/golang-migrate/migrate/tree/master
 
 ## Testing
 
-Two test layers cover the product domain:
+Three test layers cover the product domain:
 
 - **Service layer** (`internal/products/service`) — business logic, error paths, pagination edge cases, publish-failure resilience.
 - **HTTP handler layer** (`internal/products/http`) — request parsing, status codes, error mapping via `httptest`.
+- **Repository layer** (`internal/products/repository`) — integration tests with real PostgreSQL via [testcontainers-go](https://golang.testcontainers.org/). Verifies SQL queries, migrations, ordering, pagination, and edge cases against a real database.
+- **Config** (`internal/config`) — validation of required env vars, defaults, and overrides.
 
 All tests are table-driven with `t.Run()` subtests.
 
 ```bash
-CGO_ENABLED=0 go test -v ./...
+# unit tests (fast, no Docker required)
+make test
+
+# integration tests (requires Docker)
+make test-integration
+
+# all tests
+make test-all
 ```
 
 ## Swagger / OpenAPI
@@ -242,6 +251,5 @@ make swagger
 Current implementation is intentionally compact for the test task. For production, I would add:
 
 - outbox pattern for guaranteed delivery between DB write and event publish
-- integration tests with real PostgreSQL/RabbitMQ via testcontainers
 - dead-letter queue and consumer retry policy with backoff
 - OpenTelemetry tracing across services

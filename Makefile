@@ -1,4 +1,4 @@
-.PHONY: up down test run-products run-notifications lint swagger migrate-create migrate-up migrate-down migrate-status
+.PHONY: up down test test-integration test-all run-products run-notifications lint swagger migrate-create migrate-up migrate-down migrate-status
 
 DATABASE_URL ?= postgres://postgres:postgres@localhost:5432/products?sslmode=disable
 MIGRATIONS_DIR = migrations/products
@@ -12,6 +12,11 @@ down:
 test:
 	CGO_ENABLED=0 go test ./...
 
+test-integration:
+	go test -tags=integration -v -count=1 -timeout=300s ./internal/products/repository/
+
+test-all: test test-integration
+
 run-products:
 	go run ./cmd/products
 
@@ -19,7 +24,7 @@ run-notifications:
 	go run ./cmd/notifications
 
 lint:
-	golangci-lint run ./...
+	golangci-lint run --build-tags=integration ./...
 
 swagger:
 	swag init -g cmd/products/main.go -o docs
