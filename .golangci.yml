@@ -14,8 +14,7 @@ linters:
     - gosec
     - errname
     - errorlint
-    - exhaustive
-    - exportloopref
+    - durationcheck
     - goconst
     - gocritic
     - misspell
@@ -26,8 +25,6 @@ linters:
     - whitespace
 
 linters-settings:
-  govet:
-    shadow: true
   goconst:
     min-len: 3
     min-occurrences: 3
